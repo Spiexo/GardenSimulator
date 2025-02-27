@@ -23,8 +23,57 @@ class Garden:
         for plant in self.plants:
             plant.notifyPlayer()
 
+    def plantStage(self) :
+        for plant in self.plants:
+            if 0 <= plant.maturity <= 33 :
+                print(f"{plant.name} is a seed")
+            if 33.01 <= plant.maturity <= 66 :
+                print(f"{plant.name} is a shoot ")
+            if 66.01 <= plant.maturity <= 99 :
+                print(f"{plant.name} is mature")
+                plant.plantPruce()
+#A modifier pour la production en fonction des especes
+    # def plantProduce(self) :
+    #     for plant in self.plants:
+    #         if plant.specie :
+    #             pass
+    #         pass
+
+    def triggerEvent(self, day):
+        event_triggered = False
+        
+        if 2 <= day <= 4 and random.random() <= 0.3:
+            print("\n A pest infestation attacks the garden!")
+            for plant in self.plants:
+                plant.health -= random.randint(10, 20)
+                plant.health = max(0, plant.health)
+            event_triggered = True
+
+        if 5 <= day <= 7 and random.random() <= 0.4:
+            print("\n A heatwave hits the garden! Plant water evaporates quickly!")
+            for plant in self.plants:
+                plant.water -= random.randint(20, 40)
+                plant.water = max(0, plant.water)
+            event_triggered = True
+
+        if 2 <= day and random.random() <= 0.05:
+            print("\n A violent storm hits the garden!")
+            for plant in self.plants:
+                plant.health -= random.randint(15, 30)
+                plant.health = max(0, plant.health)
+            if self.plants and random.random() < 0.1:
+                removed_plant = random.choice(self.plants)
+                self.removePlant(removed_plant)
+                print(f"❌ {removed_plant.name} was destroyed by the storm!")
+            event_triggered = True
+
+        if not event_triggered:
+            print("\n No special events today.")
+
+my_garden = Garden()
+
 class Plants:
-    def __init__(self, name, waterRequir, light, growth):
+    def __init__(self, name, waterRequir, light, growth, species):
         self.waterNeed = waterRequir
         self.lightNeed = light
         self.growthSpeed = growth
@@ -32,6 +81,7 @@ class Plants:
         self.water = 50
         self.health = 100
         self.maturity = 0
+        self.specie = species
 
     def waterPlant(self, amount):
         self.water += amount
@@ -50,14 +100,14 @@ class Plants:
         self.water -= evaporation_rate
         self.water = max(0, self.water)
 
-        if self.water < self.waterNeed - 20:
+        if self.water <= self.waterNeed - 20:
             self.health -= 10
-        elif self.water > self.waterNeed + 20:
+        elif self.water >= self.waterNeed + 20:
             self.health -= 5
 
-        if lightLevel < self.lightNeed - 20:
+        if lightLevel <= self.lightNeed - 20:
             self.health -= 10
-        elif lightLevel > self.lightNeed + 20:
+        elif lightLevel >= self.lightNeed + 20:
             self.health -= 5
 
         if self.health > 50 and abs(self.water - self.waterNeed) < 20 and abs(lightLevel - self.lightNeed) < 20:
@@ -67,28 +117,45 @@ class Plants:
         if self.health <= 0:
             self.health = 0
             print(f"❌ {self.name} has died!")
+            my_garden.removePlant(self)
 
     def notifyPlayer(self):
         print(f"\n🌱 {self.name} - Health: {self.health}%, Water: {self.water:.2f}%, Maturity: {self.maturity}%")
         print(f" {self.name} needs Water: {self.waterNeed}%, Light: {self.lightNeed}%. Possede Growth: {self.growthSpeed}%")
-        if self.health < 50:
+        if self.health <= 50:
             print(f"⚠️ {self.name} is in poor health!")
-        if self.water < self.waterNeed - 20:
+        if self.water <= self.waterNeed - 20:
             print(f"💧 {self.name} needs water!")
         if self.maturity >= 100:
             print(f"🎉 {self.name} is fully matured!")
 
+
+# class Vegetables(Plants):
+#     def __init__(self, name, waterRequir, light, growth):
+#         super().__init__(name, waterRequir, light, growth)
+
+# class Fruits(Plants):
+#     def __init__(self, name, waterRequir, light, growth):
+#         super().__init__(name, waterRequir, light, growth)
+
+# class Flower(Plants):
+#     def __init__(self, name, waterRequir, light, growth):
+#         super().__init__(name, waterRequir, light, growth)
+
+
+
 available_plants = {
-    "1": ("Tomato", 60, 70, 5),
-    "2": ("Carrot", 50, 60, 4),
-    "3": ("Lettuce", 40, 50, 3)
+    "1": ("Tomato", 60, 70, 5, "fe"),
+    "2": ("Carrot", 50, 60, 4, "fe"),
+    "3": ("Lettuce", 40, 50, 3, "fe")
 }
 
-my_garden = Garden()
 day = 1
 
 while True:
     print(f"\n🌞 Day {day} - Light Level: {my_garden.lightLevel}%")
+    my_garden.plantStage()
+    my_garden.triggerEvent(day)
     my_garden.information()
 
     print("\nWhat would you like to do?")
@@ -97,9 +164,8 @@ while True:
     print("3️⃣  Maintain a plant")
     print("4️⃣  Add a plant")
     print("5️⃣  Remove a plant")
-    print("6️⃣  View all plants")
-    print("7️⃣  Skip to the next day")
-    print("8️⃣  Quit")
+    print("6  Skip to the next day")
+    print("7  Quit")
 
     choice = input("➡️  Your choice: ")
 
@@ -142,20 +208,12 @@ while True:
             print("❌ Invalid choice.")
 
     elif choice == "6":
-        print("\n🌿 Garden Overview:")
-        if my_garden.plants:
-            for plant in my_garden.plants:
-                plant.notifyPlayer()
-        else:
-            print("🚫 No plants in the garden.")
-
-    elif choice == "7":
         print("⏭️ Moving to the next day...")
         day += 1
         my_garden.updateLight()
         my_garden.modifPlantsStatus()
 
-    elif choice == "8":
+    elif choice == "7":
         print("👋 Game over. Thanks for playing!")
         break
 
