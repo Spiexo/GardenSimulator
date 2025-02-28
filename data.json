@@ -1,0 +1,12 @@
+{
+    "lightLevel": 54,
+    "plants": [
+        {
+            "name": "Tomato",
+            "water": 50,
+            "health": 100,
+            "maturity": 0,
+            "species": "Fruits"
+        }
+    ]
+}
