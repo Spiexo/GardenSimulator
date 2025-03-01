@@ -3,6 +3,16 @@ import random
 from enum import Enum
 import json
 
+class Species(Enum):
+    VEGETABLES = "Vegetables"
+    FRUITS = "Fruits"
+    FLOWERS = "Flowers"
+
+class Evolution(Enum):
+    SEED = "Seed"
+    SHOOT = "Shoot"
+    MATURE = "Mature"
+
 class Garden:
     def __init__(self):
         self.plants = []
@@ -28,19 +38,23 @@ class Garden:
     def plantStage(self) :
         for plant in self.plants:
             if 0 <= plant.maturity <= 33 :
-                print(f"{plant.name} is a seed")
+                print(f"{plant.name} is a {Evolution.SEED.value}")
             if 33.01 <= plant.maturity <= 66 :
-                print(f"{plant.name} is a shoot ")
+                print(f"{plant.name} is a {Evolution.SHOOT.value}")
             if 66.01 <= plant.maturity <= 99 :
-                print(f"{plant.name} is mature")
+                print(f"{plant.name} is {Evolution.MATURE.value}")
                 plant.plantProduce()
 
 #A modifier pour la production en fonction des especes
-    # def plantProduce(self) :
-    #     for plant in self.plants:
-    #         if plant.specie :
-    #             pass
-    #         pass
+    def plantProduce(self) :
+        for plant in self.plants:
+            if plant.species.name == species.VEGETABLES:
+                print(f"Produce {random.randint(4, 10)} {species.VEGETABLES.value}")
+                pass
+            if plant.species.name == species.FRUITS:
+                pass
+            if plant.species.name == species.VEGETABLES:
+                pass
 
     def triggerEvent(self, day):
         eventTriggered = False
@@ -98,13 +112,13 @@ class Garden:
                 self.lightLevel = data["lightLevel"]
                 self.plants = []
                 
-                for plant_data in data["plants"]:
+                for plantData in data["plants"]:
                     plant = Plants(
-                        plant_data["name"],
-                        plant_data["water"],
-                        plant_data["health"],
-                        plant_data["maturity"],
-                        Species(plant_data["species"])
+                        plantData["name"],
+                        plantData["water"],
+                        plantData["health"],
+                        plantData["maturity"],
+                        Species(plantData["species"])
                     )
                     self.plants.append(plant)
                     
@@ -116,10 +130,6 @@ class Garden:
 
 myGarden = Garden()
 
-class Species(Enum):
-    VEGETABLES = "Vegetables"
-    FRUITS = "Fruits"
-    FLOWER = "Flower"
 
 
 class Plants:
@@ -130,7 +140,7 @@ class Plants:
         self.name = name
         self.water = 50
         self.health = 100
-        self.maturity = 0
+        self.maturity = 99
         self.species = species
 
     def waterPlant(self, amount):
