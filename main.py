@@ -43,17 +43,19 @@ class Garden:
                 print(f"{plant.name} is a {Evolution.SHOOT.value}")
             if 66.01 <= plant.maturity <= 99 :
                 print(f"{plant.name} is {Evolution.MATURE.value}")
-                plant.plantProduce()
+                self.plantProduce()
 
-#A modifier pour la production en fonction des especes
+#Modifier la production pour que cella fonctionne réllement avec un stock de crop etc...
     def plantProduce(self) :
         for plant in self.plants:
             if plant.species.name == species.VEGETABLES:
-                print(f"Produce {random.randint(4, 10)} {species.VEGETABLES.value}")
+                print(f"Produce {random.randint(4, 10)} {species.VEGETABLES.value} of {plant.name}")
                 pass
-            if plant.species.name == species.FRUITS:
+            elif plant.species.name == species.FRUITS:
+                print(f"Produce {random.randint(4, 10)} {species.FRUITS.value} of {plant.name}")
                 pass
-            if plant.species.name == species.VEGETABLES:
+            elif plant.species.name == species.FLOWERS:
+                print(f"Produce {random.randint(2, 6)} {species.FLOWERS.value} of {plant.name}")
                 pass
 
     def triggerEvent(self, day):
@@ -82,6 +84,17 @@ class Garden:
                 removedPlant = random.choice(self.plants)
                 self.removePlant(removedPlant)
                 print(f"❌ {removedPlant.name} was destroyed by the storm!")
+            eventTriggered = True
+            
+        elif 2 <= day and random.random() < 0.01:
+            print("\n A wave of zombies has trampled your garden!")
+            for plant in self.plants:
+                plant.health -= random.randint(30, 70)
+                plant.health = max(0, plant.health)
+            if self.plants and random.random() < 0.2:
+                removedPlant = random.choice(self.plants)
+                self.removePlant(removedPlant)
+                print(f"❌ {removedPlant.name} was destroyed by the wave of zombies!")
             eventTriggered = True
 
         if not eventTriggered:
@@ -122,10 +135,10 @@ class Garden:
                     )
                     self.plants.append(plant)
                     
-                print("✔ Partie chargée avec succès !")
+                print("Successfully loaded!")
         
         except FileNotFoundError:
-            print("Aucune sauvegarde trouvée. Démarrage d'un nouveau jardin.")
+            print("No backups found. Starting a new garden.")
 
 
 myGarden = Garden()
@@ -133,7 +146,7 @@ myGarden = Garden()
 
 
 class Plants:
-    def __init__(self, name, waterRequir, light, growth, species: Species):
+    def __init__(self, name, waterRequir, light, growth, species: Species, crops):
         self.waterNeed = waterRequir
         self.lightNeed = light
         self.growthSpeed = growth
@@ -142,6 +155,7 @@ class Plants:
         self.health = 100
         self.maturity = 99
         self.species = species
+        # self.crops = crops
 
     def waterPlant(self, amount):
         self.water += amount
@@ -193,7 +207,8 @@ class Plants:
 availablePlants = {
     "1": ("Tomato", 60, 70, 5, Species.FRUITS),
     "2": ("Carrot", 50, 60, 4, Species.VEGETABLES),
-    "3": ("Lettuce", 40, 50, 3, Species.VEGETABLES)
+    "3": ("Lettuce", 40, 50, 3, Species.VEGETABLES),
+    "4": ("Viool Bergwacht", 40, 40, 20, Species.FLOWERS)
 }
 
 day = 1
@@ -262,8 +277,8 @@ while True:
         myGarden.modifPlantsStatus()
 
     elif choice == "7":
-        print("Save!")
         myGarden.save()
+        print("Save!")
         print("Come back soon")
         break
 
