@@ -13,10 +13,37 @@ class Evolution(Enum):
     SHOOT = "Shoot"
     MATURE = "Mature"
 
+class SoilType(Enum):
+    CLAY = "Clay"
+    SANDY = "Sandy"
+    LOAMY = "Loamy"
+
+class Season(Enum):
+    SPRING = "Spring"
+    SUMMER = "Summer"
+    AUTUMN = "Autumn"
+    WINTER = "Winter"
+
+class Soil:
+    def __init__(self, soil_type: SoilType):
+        self.soil_type = soil_type
+        self.nutrient_level = 50
+
+    def fertilize(self, amount):
+        self.nutrient_level += amount
+        self.nutrient_level = min(self.nutrient_level, 100)
+
+    def update_nutrients(self):
+        self.nutrient_level -= random.randint(1, 5)
+        self.nutrient_level = max(0, self.nutrient_level)
+
 class Garden:
     def __init__(self):
         self.plants = []
         self.lightLevel = random.randint(30, 80)
+        self.soil = Soil(SoilType.LOAMY)
+        self.season = Season.SPRING
+        self.day = 1
 
     def addPlant(self, plant):
         self.plants.append(plant)
@@ -27,74 +54,76 @@ class Garden:
     def updateLight(self):
         self.lightLevel = random.randint(30, 80)
 
+    def updateSeason(self):
+        if self.day % 90 == 0:
+            self.season = Season((self.season.value + 1) % 4)
+
     def modifPlantsStatus(self):
         for plant in self.plants:
-            plant.updateStatus(self.lightLevel)
+            plant.updateStatus(self.lightLevel, self.soil.nutrient_level, self.season, self.soil.soil_type)
 
     def information(self):
         for plant in self.plants:
             plant.notifyPlayer()
 
-    def plantStage(self) :
+    def plantStage(self):
         for plant in self.plants:
-            if 0 <= plant.maturity <= 33 :
+            if 0 <= plant.maturity <= 33:
                 print(f"{plant.name} is a {Evolution.SEED.value}")
-            if 33.01 <= plant.maturity <= 66 :
+            elif 33.01 <= plant.maturity <= 66:
                 print(f"{plant.name} is a {Evolution.SHOOT.value}")
-            if 66.01 <= plant.maturity <= 99 :
+            elif 66.01 <= plant.maturity <= 99:
                 print(f"{plant.name} is {Evolution.MATURE.value}")
                 self.plantProduce()
 
-#Modifier la production pour que cella fonctionne réllement avec un stock de crop etc...
-    def plantProduce(self) :
+    def plantProduce(self):
         for plant in self.plants:
-            if plant.species.name == species.VEGETABLES:
-                print(f"Produce {random.randint(4, 10)} {species.VEGETABLES.value} of {plant.name}")
-                pass
-            elif plant.species.name == species.FRUITS:
-                print(f"Produce {random.randint(4, 10)} {species.FRUITS.value} of {plant.name}")
-                pass
-            elif plant.species.name == species.FLOWERS:
-                print(f"Produce {random.randint(2, 6)} {species.FLOWERS.value} of {plant.name}")
-                pass
+            if plant.maturity >= 100:
+                if plant.species == Species.VEGETABLES:
+                    print(f"Produce {random.randint(4, 10)} {Species.VEGETABLES.value} of {plant.name}")
+                elif plant.species == Species.FRUITS:
+                    print(f"Produce {random.randint(4, 10)} {Species.FRUITS.value} of {plant.name}")
+                elif plant.species == Species.FLOWERS:
+                    print(f"Produce {random.randint(2, 6)} {Species.FLOWERS.value} of {plant.name}")
 
-    def triggerEvent(self, day):
+    def triggerEvent(self):
         eventTriggered = False
-        
-        if 2 <= day <= 4 and random.random() <= 0.3:
-            print("\n A pest infestation attacks the garden!")
-            for plant in self.plants:
-                plant.health -= random.randint(10, 20)
-                plant.health = max(0, plant.health)
-            eventTriggered = True
 
-        if 5 <= day <= 7 and random.random() <= 0.4:
-            print("\n A heatwave hits the garden! Plant water evaporates quickly!")
-            for plant in self.plants:
-                plant.water -= random.randint(20, 40)
-                plant.water = max(0, plant.water)
-            eventTriggered = True
-
-        if 2 <= day and random.random() <= 0.05:
-            print("\n A violent storm hits the garden!")
-            for plant in self.plants:
-                plant.health -= random.randint(15, 30)
-                plant.health = max(0, plant.health)
-            if self.plants and random.random() < 0.1:
-                removedPlant = random.choice(self.plants)
-                self.removePlant(removedPlant)
-                print(f"❌ {removedPlant.name} was destroyed by the storm!")
-            eventTriggered = True
-            
-        elif 2 <= day and random.random() < 0.01:
-            print("\n A wave of zombies has trampled your garden!")
-            for plant in self.plants:
-                plant.health -= random.randint(30, 70)
-                plant.health = max(0, plant.health)
-            if self.plants and random.random() < 0.2:
-                removedPlant = random.choice(self.plants)
-                self.removePlant(removedPlant)
-                print(f"❌ {removedPlant.name} was destroyed by the wave of zombies!")
+        if random.random() <= 0.1:
+            event = random.choice(["pest", "drought", "storm", "disease", "zombies"])
+            if event == "pest":
+                print("\n A pest infestation attacks the garden!")
+                for plant in self.plants:
+                    plant.health -= random.randint(10, 20)
+                    plant.health = max(0, plant.health)
+            elif event == "drought":
+                print("\n A drought hits the garden! Plant water evaporates quickly!")
+                for plant in self.plants:
+                    plant.water -= random.randint(20, 40)
+                    plant.water = max(0, plant.water)
+            elif event == "storm":
+                print("\n A violent storm hits the garden!")
+                for plant in self.plants:
+                    plant.health -= random.randint(15, 30)
+                    plant.health = max(0, plant.health)
+                if self.plants and random.random() < 0.1:
+                    removedPlant = random.choice(self.plants)
+                    self.removePlant(removedPlant)
+                    print(f"❌ {removedPlant.name} was destroyed by the storm!")
+            elif event == "disease":
+                print("\n A disease spreads through the garden!")
+                for plant in self.plants:
+                    plant.health -= random.randint(10, 30)
+                    plant.health = max(0, plant.health)
+            elif event == "zombies" and random.random() <= 0.01:
+                print("\n A wave of zombies has trampled your garden!")
+                for plant in self.plants:
+                    plant.health -= random.randint(30, 70)
+                    plant.health = max(0, plant.health)
+                if self.plants and random.random() < 0.2:
+                    removedPlant = random.choice(self.plants)
+                    self.removePlant(removedPlant)
+                    print(f"❌ {removedPlant.name} was destroyed by the wave of zombies!")
             eventTriggered = True
 
         if not eventTriggered:
@@ -103,13 +132,18 @@ class Garden:
     def save(self):
         data = {
             "lightLevel": self.lightLevel,
+            "soilType": self.soil.soil_type.value,
+            "nutrientLevel": self.soil.nutrient_level,
+            "season": self.season.value,
+            "day": self.day,
             "plants": [
                 {
                     "name": plant.name,
                     "water": plant.water,
                     "health": plant.health,
                     "maturity": plant.maturity,
-                    "species": plant.species.value
+                    "species": plant.species.value,
+                    "nutrients": plant.nutrients
                 }
                 for plant in self.plants
             ]
@@ -121,55 +155,54 @@ class Garden:
         try:
             with open("data.json", "r", encoding="utf-8") as f:
                 data = json.load(f)
-                
+
                 self.lightLevel = data["lightLevel"]
+                self.soil = Soil(SoilType(data["soilType"]))
+                self.soil.nutrient_level = data["nutrientLevel"]
+                self.season = Season(data["season"])
+                self.day = data["day"]
                 self.plants = []
-                
+
                 for plantData in data["plants"]:
                     plant = Plants(
                         plantData["name"],
                         plantData["water"],
                         plantData["health"],
                         plantData["maturity"],
-                        Species(plantData["species"])
+                        Species(plantData["species"]),
+                        plantData["nutrients"]
                     )
                     self.plants.append(plant)
-                    
+
                 print("Successfully loaded!")
-        
         except FileNotFoundError:
             print("No backups found. Starting a new garden.")
 
-
-myGarden = Garden()
-
-
-
 class Plants:
-    def __init__(self, name, waterRequir, light, growth, species: Species, crops):
+    def __init__(self, name, waterRequir, light, growth, species: Species, nutrients=50):
         self.waterNeed = waterRequir
         self.lightNeed = light
         self.growthSpeed = growth
         self.name = name
         self.water = 50
         self.health = 100
-        self.maturity = 99
+        self.maturity = 0
         self.species = species
-        # self.crops = crops
+        self.nutrients = nutrients
 
     def waterPlant(self, amount):
         self.water += amount
         self.water = max(0, min(self.water, 100))
 
-    def fertilize(self):
-        self.maturity += self.growthSpeed * 2
-        self.maturity = min(self.maturity, 100)
+    def fertilize(self, amount):
+        self.nutrients += amount
+        self.nutrients = min(self.nutrients, 100)
 
     def maintain(self):
         self.health += 40
         self.health = min(self.health, 100)
 
-    def updateStatus(self, lightLevel):
+    def updateStatus(self, lightLevel, nutrientLevel, season, soil_type: SoilType):
         evaporationRate = lightLevel * 0.05
         self.water -= evaporationRate
         self.water = max(0, self.water)
@@ -184,8 +217,20 @@ class Plants:
         elif lightLevel >= self.lightNeed + 20:
             self.health -= 5
 
-        if self.health > 50 and abs(self.water - self.waterNeed) < 20 and abs(lightLevel - self.lightNeed) < 20:
-            self.maturity += self.growthSpeed
+        if nutrientLevel <= 30:
+            self.health -= 10
+        elif nutrientLevel >= 80:
+            self.health -= 5
+
+        if soil_type == SoilType.CLAY:
+            growth_multiplier = 0.8
+        elif soil_type == SoilType.SANDY:
+            growth_multiplier = 0.9
+        else:
+            growth_multiplier = 1.2
+
+        if self.health > 50 and abs(self.water - self.waterNeed) < 20 and abs(lightLevel - self.lightNeed) < 20 and nutrientLevel > 30:
+            self.maturity += self.growthSpeed * growth_multiplier
             self.maturity = min(self.maturity, 100)
 
         if self.health <= 0:
@@ -211,11 +256,11 @@ availablePlants = {
     "4": ("Viool Bergwacht", 40, 40, 20, Species.FLOWERS)
 }
 
-day = 1
+myGarden = Garden()
 
 while True:
-    print(f"\n🌞 Day {day} - Light Level: {myGarden.lightLevel}%")
-    myGarden.triggerEvent(day)
+    print(f"\n🌞 Day {myGarden.day} - Light Level: {myGarden.lightLevel}% - Season: {myGarden.season.value}")
+    myGarden.triggerEvent()
     myGarden.information()
     myGarden.plantStage()
 
@@ -225,10 +270,10 @@ while True:
     print("3️⃣  Maintain a plant")
     print("4️⃣  Add a plant")
     print("5️⃣  Remove a plant")
-    print("6  Skip to the next day")
-    print("7  Save the game")
-    print("8  Load a save")
-    print("9  Quit")
+    print("6️⃣  Skip to the next day")
+    print("7️⃣  Save the game")
+    print("8️⃣  Load a save")
+    print("9️⃣  Quit")
 
     choice = input("➡️  Your choice: ")
 
@@ -244,8 +289,8 @@ while True:
                     amount = int(input("💧 How much water to give?: "))
                     plant.waterPlant(amount)
                 elif choice == "2":
-                    plant.fertilize()
-                    print(f"🌱 You fertilized {plant.name}!")
+                    amount = int(input("🌱 How much fertilizer to give?: "))
+                    plant.fertilize(amount)
                 elif choice == "3":
                     plant.maintain()
                     print(f"✂️ You maintained {plant.name}!")
@@ -272,15 +317,14 @@ while True:
 
     elif choice == "6":
         print("⏭️ Moving to the next day...")
-        day += 1
+        myGarden.day += 1
         myGarden.updateLight()
+        myGarden.updateSeason()
         myGarden.modifPlantsStatus()
 
     elif choice == "7":
         myGarden.save()
         print("Save!")
-        print("Come back soon")
-        break
 
     elif choice == "8":
         myGarden.load()
