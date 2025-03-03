@@ -1,13 +1,15 @@
 {
-    "lightLevel": 42,
-    "soilType": "Sandy",
+    "lightLevel": 77,
+    "soilType": "Richsoil",
     "nutrientLevel": 50,
     "season": "Spring",
     "day": 1,
+    "event": null,
     "plants": [],
     "inventory": {
         "vegetables": 0,
         "fruits": 0,
-        "flowers": 0
+        "flowers": 0,
+        "money": 9000
     }
 }

@@ -31,6 +31,7 @@ class Inventory:
             Species.FRUITS: 0,
             Species.FLOWERS: 0
         }
+        self.money = 99999
 
     def addProduce(self, species: Species, quantity):
         self.storage[species] += quantity
@@ -38,6 +39,12 @@ class Inventory:
     def sellProduce(self, species: Species, quantity):
         if self.storage[species] >= quantity:
             self.storage[species] -= quantity
+            if species == Species.VEGETABLES:
+                self.money += quantity * 5
+            elif species == Species.FRUITS:
+                self.money += quantity * 10
+            elif species == Species.FLOWERS:
+                self.money += quantity * 15
             return quantity
         else:
             print("Not enough produce to sell")
@@ -55,19 +62,11 @@ class Inventory:
         print("\n📦 Inventory:")
         for species, quantity in self.storage.items():
             print(f"{species.value}: {quantity}")
+        print(f"💰 Money: ${self.money}")
 
 class Soil:
     def __init__(self, soilType: SoilType):
         self.soilType = soilType
-        self.nutrientLevel = 50
-
-    def fertilize(self, amount):
-        self.nutrientLevel += amount
-        self.nutrientLevel = min(self.nutrientLevel, 100)
-
-    def updateNutrients(self):
-        self.nutrientLevel -= random.randint(1, 5)
-        self.nutrientLevel = max(0, self.nutrientLevel)
 
 class Garden:
     def __init__(self):
@@ -77,6 +76,17 @@ class Garden:
         self.season = Season.SPRING
         self.day = 1
         self.inventory = Inventory()
+        self.event = None
+
+    def rules(self):
+        print("\n📜 Welcome to Garden Simulator! Here are the rules:")
+        print("1. You start with a garden and can choose the type of soil (EASY, NORMAL, HARD).")
+        print("2. Each day, you can water, fertilize, or maintain your plants.")
+        print("3. Plants grow over time and produce vegetables, fruits, or flowers.")
+        print("4. You can sell or use the produce to earn points or improve your garden.")
+        print("5. Random events like pests, droughts, storms, diseases, or even zombies can occur.")
+        print("6. Your goal is to keep your plants healthy and maximize your harvest.")
+        print("7. The game ends when you decide to quit. Have fun!\n")
 
     def difficulty(self):
         print("Select your soil:")
@@ -114,11 +124,11 @@ class Garden:
 
     def modifPlantsStatus(self):
         for plant in self.plants:
-            plant.updateStatus(self.lightLevel, self.soil.nutrientLevel, self.soil.soilType)
+            plant.updateStatus(self.lightLevel, self.soil.soilType)
 
     def information(self):
         for plant in self.plants:
-            plant.notifyPlayer(self.soil.nutrientLevel)
+            plant.notifyPlayer()
 
     def plantStage(self):
         for plant in self.plants:
@@ -128,16 +138,18 @@ class Garden:
                 print(f"{plant.name} is a {Evolution.SHOOT.value}")
             elif 66.01 <= plant.maturity <= 99:
                 print(f"{plant.name} is {Evolution.MATURE.value}")
+            elif plant.maturity >= 100:
+                print(f"{plant.name} is fully matured and ready to produce!")
                 self.plantProduce()
 
     def plantProduce(self):
         for plant in self.plants:
             if plant.maturity >= 100:
-                if self.soil.nutrientLevel < 30:
+                if plant.nutrients < 30:
                     productionMultiplier = 0.5
-                elif 30 <= self.soil.nutrientLevel <= 80:
+                elif 30 <= plant.nutrients <= 80:
                     productionMultiplier = 1.0
-                elif 80 < self.soil.nutrientLevel:
+                elif 80 < plant.nutrients:
                     productionMultiplier = 1.5
 
                 if plant.species == Species.VEGETABLES:
@@ -153,9 +165,8 @@ class Garden:
                     self.inventory.addProduce(Species.FLOWERS, production)
                     print(f"🌱 {plant.name} produced {production} {Species.FLOWERS.value}!")
 
-    def fertilizeSoil(self, amount):
-        self.soil.fertilize(amount)
-        print(f"🌱 Fertilized the soil! Soil nutrients are now at {self.soil.nutrientLevel}%.")
+                plant.nutrients -= 60
+                plant.nutrients = max(0, plant.nutrients)
 
     def triggerEvent(self):
         eventTriggered = False
@@ -206,6 +217,7 @@ class Garden:
                     print(f"❌ {removedPlant.name} was destroyed by the wave of zombies!")
 
             if not eventTriggered:
+                self.event = None
                 print("\n No special events today.")
 
     def save(self):
@@ -216,6 +228,7 @@ class Garden:
                 "nutrientLevel": self.soil.nutrientLevel,
                 "season": self.season.value,
                 "day": self.day,
+                "event": self.event,
                 "plants": [
                     {
                         "name": plant.name,
@@ -230,7 +243,8 @@ class Garden:
                 "inventory": {
                     "vegetables": self.inventory.storage[Species.VEGETABLES],
                     "fruits": self.inventory.storage[Species.FRUITS],
-                    "flowers": self.inventory.storage[Species.FLOWERS]
+                    "flowers": self.inventory.storage[Species.FLOWERS],
+                    "money": self.inventory.money
                 }
             }
             with open("data.json", "w", encoding="utf-8") as f:
@@ -250,6 +264,7 @@ class Garden:
                 self.soil.nutrientLevel = data["nutrientLevel"]
                 self.season = Season(data["season"])
                 self.day = data["day"]
+                self.event = data["event"]
                 self.plants = []
 
                 for plantData in data["plants"]:
@@ -266,6 +281,7 @@ class Garden:
                 self.inventory.storage[Species.VEGETABLES] = data["inventory"]["vegetables"]
                 self.inventory.storage[Species.FRUITS] = data["inventory"]["fruits"]
                 self.inventory.storage[Species.FLOWERS] = data["inventory"]["flowers"]
+                self.inventory.money = data["inventory"]["money"]
 
                 print("Successfully loaded!")
         except FileNotFoundError:
@@ -287,11 +303,15 @@ class Plants:
         self.water += amount
         self.water = max(0, min(self.water, 100))
 
+    def fertilize(self, amount):
+        self.nutrients += amount
+        self.nutrients = min(self.nutrients, 100)
+
     def maintain(self):
         self.health += 40
         self.health = min(self.health, 100)
 
-    def updateStatus(self, lightLevel, nutrientLevel, soilType: SoilType):
+    def updateStatus(self, lightLevel, soilType: SoilType):
         evaporationRate = lightLevel * 0.05
         self.water -= evaporationRate
         self.water = max(0, self.water)
@@ -306,9 +326,9 @@ class Plants:
         elif lightLevel > self.lightNeed + 20:
             self.health -= 5
 
-        if nutrientLevel < 30:
+        if self.nutrients < 30:
             self.health -= 10
-        elif nutrientLevel > 80:
+        elif self.nutrients > 80:
             self.health -= 5
 
         if soilType == SoilType.CLAY:
@@ -318,7 +338,7 @@ class Plants:
         elif soilType == SoilType.RICHSOIL:
             growth_multiplier = 1.2
 
-        if self.health >= 50 and abs(self.water - self.waterNeed) <= 20 and abs(lightLevel - self.lightNeed) <= 20 and nutrientLevel >= 30:
+        if self.health >= 50 and abs(self.water - self.waterNeed) <= 20 and abs(lightLevel - self.lightNeed) <= 20 and self.nutrients >= 30:
             self.maturity += self.growthSpeed * growth_multiplier
             self.maturity = min(self.maturity, 100)
 
@@ -327,8 +347,8 @@ class Plants:
             print(f"❌ {self.name} has died!")
             myGarden.removePlant(self)
 
-    def notifyPlayer(self, nutrientLevel):
-        print(f"\n🌱 {self.name} - Health: {self.health}%, Water: {self.water:.2f}%, Maturity: {self.maturity}%, Soil Nutrients: {nutrientLevel}%")
+    def notifyPlayer(self):
+        print(f"\n🌱 {self.name} - Health: {self.health}%, Water: {self.water:.2f}%, Maturity: {self.maturity}%, Soil Nutrients: {self.nutrients}%")
         print(f" {self.name}, which is a {self.species.value}, needs Water: {self.waterNeed}%, Light: {self.lightNeed}%. Its growth speed is {self.growthSpeed}%.")
         if self.health < 50:
             print(f"⚠️ {self.name} is in poor health!")
@@ -346,8 +366,29 @@ availablePlants = {
     "4": ("Viool Bergwacht", 40, 40, 20, Species.FLOWERS)
 }
 
+class Casino:
+    def __init__(self):
+        self.symbols = ["🍒", "🍋", "🍇", "🍉", "🔔", "💎"]
+
+    def playSlotMachine(self, bet):
+
+        result = [random.choice(self.symbols) for _ in range(3)]
+        print("🎰 Slot Machine Result:", " ".join(result))
+
+        if result[0] == result[1] == result[2]:
+            winnings = bet * 10
+            print(f"🎉 Jackpot! You won ${winnings}!")
+        elif result[0] == result[1] or result[1] == result[2] or result[0] == result[2]:
+            winnings = bet * 2
+            print(f"🎉 You won ${winnings}!")
+        else:
+            winnings = -bet
+            print(f"😢 You lost ${bet}.")
+
+        return winnings
+
 def mainLoop(myGarden):
-    """Fonction principale contenant la boucle du jeu."""
+    
     while True:
         print(f"\n🌞 Day {myGarden.day} - Light Level: {myGarden.lightLevel}% - Season: {myGarden.season.value} - Soil Type: {myGarden.soil.soilType.value}")
         myGarden.triggerEvent()
@@ -356,7 +397,7 @@ def mainLoop(myGarden):
 
         print("\nWhat would you like to do?")
         print("1.  Water a plant")
-        print("2.  Fertilize the soil")
+        print("2.  Fertilize a plant")
         print("3.  Maintain a plant")
         print("4.  Add a plant")
         print("5.  Remove a plant")
@@ -366,11 +407,12 @@ def mainLoop(myGarden):
         print("9.  View inventory")
         print("10. Sell produce")
         print("11. Use produce")
-        print("12. Quit")
+        print("12. Visit the Casino")
+        print("13. Quit The Game")
 
         choice = input("➡️  Your choice: ")
 
-        if choice in ["1", "3", "5"] and myGarden.plants:
+        if choice in ["1", "2", "3", "5"] and myGarden.plants:
             print("Select a plant:")
             for i, plant in enumerate(myGarden.plants, 1):
                 print(f"{i}. {plant.name}")
@@ -381,6 +423,9 @@ def mainLoop(myGarden):
                     if choice == "1":
                         amount = int(input("💧 How much water to give?: "))
                         plant.waterPlant(amount)
+                    elif choice == "2":
+                        amount = int(input("🌱 How much fertilizer to add?: "))
+                        plant.fertilize(amount)
                     elif choice == "3":
                         plant.maintain()
                         print(f"✂️ You maintained {plant.name}!")
@@ -391,10 +436,6 @@ def mainLoop(myGarden):
                     print("❌ Invalid plant.")
             except ValueError:
                 print("❌ Invalid input, please enter a valid number.")
-
-        elif choice == "2":
-            amount = int(input("🌱 How much fertilizer to add to the soil?: "))
-            myGarden.fertilizeSoil(amount)
 
         elif choice == "4":
             print("Select a plant to add:")
@@ -466,6 +507,27 @@ def mainLoop(myGarden):
                 print("❌ Invalid choice.")
 
         elif choice == "12":
+            while True:
+                print("\n🎰 Welcome to the Casino!")
+                print(f"💰 You have ${myGarden.inventory.money}.")
+                print("1. Play Slot Machine")
+                print("2. Exit Casino")
+                casino_choice = input("➡️  Your choice: ")
+
+                if casino_choice == "1":
+                    bet = int(input("➡️  How much do you want to bet? $"))
+                    if bet > myGarden.inventory.money:
+                        print("❌ You don't have enough money!")
+                    else:
+                        winnings = casino.playSlotMachine(bet)
+                        myGarden.inventory.money += winnings
+                        print(f"💰 Your new balance: ${myGarden.inventory.money}")
+                elif casino_choice == "2":
+                    print("👋 Exiting the Casino. Good luck with your garden!")
+                    break
+                else:
+                    print("❌ Invalid option, try again.")
+        elif choice == "13":
             print("👋 Game over. Thanks for playing!")
             break
 
@@ -474,6 +536,7 @@ def mainLoop(myGarden):
 
         time.sleep(0.5)
 
+casino = Casino()
 myGarden = Garden()
 myGarden.difficulty()
 mainLoop(myGarden)
