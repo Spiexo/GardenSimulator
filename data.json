@@ -1,0 +1,13 @@
+{
+    "lightLevel": 42,
+    "soilType": "Sandy",
+    "nutrientLevel": 50,
+    "season": "Spring",
+    "day": 1,
+    "plants": [],
+    "inventory": {
+        "vegetables": 0,
+        "fruits": 0,
+        "flowers": 0
+    }
+}
