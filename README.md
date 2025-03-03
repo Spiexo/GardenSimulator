@@ -113,7 +113,7 @@ What would you like to do?
 
 ## Author
 
-Spiexo - [Your GitHub](https://github.com/Spiexo)
+Spiexo - [GitHub](https://github.com/Spiexo)
 
 Enjoy the game and have fun growing your virtual garden! 🌻
 
